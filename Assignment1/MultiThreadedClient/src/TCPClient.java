@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class TCPClient {
+public class TCPClient {//exc1 update 2
 
     public static int ThreadsFinished = 0;
     public static int sumlatency=0;
