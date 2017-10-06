@@ -10,10 +10,11 @@ import java.util.concurrent.Executors;
 public class TCPClient {
 
     public static int ThreadsFinished = 0;
-
+    public static int sumlatency=0;
+    public static float avglatency=0;
     private static class TCPWorker implements Runnable{
 
-
+        Object lock = new Object();
         String host;
         int counter;
         int port;
@@ -26,10 +27,10 @@ public class TCPClient {
         public void run(){
             try {
 
-                System.out.println("started thread " + this.counter);
+                //System.out.println("started thread " + this.counter);
                 String message="", response;
                 Socket socket = new Socket(this.host, port);
-                System.out.println("Checkpoint 2");
+                //System.out.println("Checkpoint 2");
 
 
                 DataOutputStream output = new DataOutputStream(socket.getOutputStream());
@@ -37,7 +38,7 @@ public class TCPClient {
                         new InputStreamReader(socket.getInputStream())
                 );
 
-                System.out.println("Checkpoint 3");
+                //System.out.println("Checkpoint 3");
 //                String request;
 //                BufferedReader reader = new BufferedReader(
 //                        new InputStreamReader(System.in)
@@ -46,22 +47,29 @@ public class TCPClient {
 
 
                 //message = reader.readLine() + System.lineSeparator();
-                message= message.concat("Hello + " + socket.getInetAddress() + " " + socket.getLocalPort() + " " + counter + "\n");
+                message= message.concat("Hello " + socket.getInetAddress() + " " + socket.getLocalPort() + " " + counter + "\n");
 
                 int i=0;
-                while(i<10){
-
-                    output.writeBytes(message);
-
-                    System.out.println(System.currentTimeMillis());
-
-//                    System.out.println(System.currentTimeMillis());
-//                    response = server.readLine();
+                while(i<300){
 
 
-                    System.out.println("Client: "+i);
+
+                        output.writeBytes(message);
+                        int req= (int) System.currentTimeMillis();
+
+
+
+
+
+
+                    //System.out.println("Client: "+i);
                     response = server.readLine();
-                    System.out.println("[" + new Date() + "] Received: " + response + " from request: " + i);
+                    int resp= (int) System.currentTimeMillis();
+                    sumlatency+=(resp-req);
+                    if(this.counter==1){
+                        System.out.println(""+ (resp-req));
+                    }
+                    //System.out.println("[" + new Date() + "] Received:   from request: " + i);
 
 //                    System.out.println("[" + new Date() + "] Received: " + response + " from request: " + i);
                     i++;
@@ -69,13 +77,13 @@ public class TCPClient {
                 }
                 output.writeBytes("CLOSE\n");
                 response = server.readLine();
-                System.out.println(response);
+                //System.out.println(response);
 
 
                 ThreadsFinished++;
-                System.out.println("Thread number: " + Thread.currentThread().getId() + " finished");
+               // System.out.println("Thread number: " + Thread.currentThread().getId() + " finished");
                 socket.close();
-                if(ThreadsFinished==10) System.exit(1);
+                if(ThreadsFinished==10){avglatency= (float) ((float)sumlatency/3000.0); System.out.println(avglatency);System.exit(1);}
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -95,7 +103,7 @@ public class TCPClient {
 
 
                 TCP_WORKER_SERVICE.submit(
-                        new TCPWorker("34.208.155.204",counter,80)
+                        new TCPWorker("127.0.0.1",counter,80)
                 );
                 counter++;
             }
