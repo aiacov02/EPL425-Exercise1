@@ -18,6 +18,10 @@ public class MultiThreadedTCPServer {
     public static int c;
     public static int Repetitions;
     public static int MaxRepetitions;
+    public static double MemoryUtil;
+    public static double AvgMemoryUtil;
+    public static long totalmemory;
+
 
     private static class TCPWorker implements Runnable {
 
@@ -63,6 +67,8 @@ public class MultiThreadedTCPServer {
 
                 break;
             }
+
+            totalmemory += (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
                 System.out.println("[" + new Date() + "] Received: " + this.clientbuffer);
 
                 String[] tokens = this.clientbuffer.split(" ");
@@ -83,7 +89,7 @@ public class MultiThreadedTCPServer {
                 output.writeBytes("Welcome " + tokens[3] + p + System.lineSeparator());
                 throughput=(double)(c*1000)/((System.currentTimeMillis()-start_time));
                 System.out.println("throughput of server: "+ throughput + " Requests per Second");
-
+                System.out.println("Memory Usage: " + (totalmemory/(c+1))  );
                 c++;
 		}
                 

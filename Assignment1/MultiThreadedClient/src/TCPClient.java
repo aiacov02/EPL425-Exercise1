@@ -14,7 +14,8 @@ public class TCPClient {
     public static float avglatency=0;
     public static int AllRequests=0;
     public static final int REQUESTSPERCLIENT=300;
-    public static final int CLIENTS=10;
+
+
 
     private static class TCPWorker implements Runnable{
 
