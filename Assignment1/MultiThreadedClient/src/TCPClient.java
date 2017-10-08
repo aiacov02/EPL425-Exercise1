@@ -7,14 +7,17 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class TCPClient {//exc1 update 2
+public class TCPClient {
 
     public static int ThreadsFinished = 0;
     public static int sumlatency=0;
     public static float avglatency=0;
+    public static int AllRequests=0;
+    public static final int REQUESTSPERCLIENT=300;
+    public static final int CLIENTS=10;
+
     private static class TCPWorker implements Runnable{
 
-        Object lock = new Object();
         String host;
         int counter;
         int port;
@@ -28,7 +31,7 @@ public class TCPClient {//exc1 update 2
             try {
 
                 //System.out.println("started thread " + this.counter);
-                String message="", response;
+                String message="", response="";
                 Socket socket = new Socket(this.host, port);
                 //System.out.println("Checkpoint 2");
 
@@ -47,43 +50,40 @@ public class TCPClient {//exc1 update 2
 
 
                 //message = reader.readLine() + System.lineSeparator();
-                message= message.concat("Hello " + socket.getInetAddress() + " " + socket.getLocalPort() + " " + counter + "\n");
-
+                message= message.concat("Hello " + "Client IP: "+socket.getInetAddress() + " Client Random Local Port: " + socket.getLocalPort() + " Client ID: " + counter + "\n");
+                boolean stopsending = false;
                 int i=0;
-                while(i<300){
+                while(i<REQUESTSPERCLIENT){
+                    int req;
+                    output.writeBytes(message);
+                    req= (int) System.currentTimeMillis();
 
-
-
-                        output.writeBytes(message);
-                        int req= (int) System.currentTimeMillis();
-
-
-
-
-
-
-                    //System.out.println("Client: "+i);
                     response = server.readLine();
-                    int resp= (int) System.currentTimeMillis();
-                    sumlatency+=(resp-req);
-                    if(this.counter==1){
-                        System.out.println(""+ (resp-req));
-                    }
-                    //System.out.println("[" + new Date() + "] Received:   from request: " + i);
 
-//                    System.out.println("[" + new Date() + "] Received: " + response + " from request: " + i);
+                    int resp= (int) System.currentTimeMillis();
+                    System.out.println("[" + new Date() + "] Client: " + counter + " received response for request: " + (i+1));
+                    if(response.equals("STOP")){
+                        stopsending=true;
+                        break;
+                    }
+                    AllRequests++;
+
+                    sumlatency+=(resp-req);
+
+
                     i++;
 
                 }
-                output.writeBytes("CLOSE\n");
-                response = server.readLine();
-                //System.out.println(response);
+                if(!stopsending){
+                    output.writeBytes("CLOSE\n");
+                    response = server.readLine();
+                }
 
 
                 ThreadsFinished++;
-               // System.out.println("Thread number: " + Thread.currentThread().getId() + " finished");
                 socket.close();
-                if(ThreadsFinished==10){avglatency= (float) ((float)sumlatency/3000.0); System.out.println(avglatency);System.exit(1);}
+                System.out.println("Client " + counter + " finished with " + i + " requests served and message: " + response);
+                if(ThreadsFinished==CLIENTS){avglatency= (float) ((float)sumlatency/AllRequests); System.out.println("Latency: " + avglatency + " milliseconds");System.exit(1);}
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -92,18 +92,19 @@ public class TCPClient {//exc1 update 2
         }
     }
 
-    public static ExecutorService TCP_WORKER_SERVICE = Executors.newFixedThreadPool(10);
+    public static ExecutorService TCP_WORKER_SERVICE = Executors.newFixedThreadPool(CLIENTS);
 
 
     public static void main(String args[]) {
-
+        String ip = args[0];
+        int port = Integer.parseInt(args[1]);
         try{
             int counter=1;
-            while (counter<=10) {
+            while (counter<=CLIENTS) {
 
 
                 TCP_WORKER_SERVICE.submit(
-                        new TCPWorker("127.0.0.1",counter,80)
+                        new TCPWorker(ip,counter,port)
                 );
                 counter++;
             }
